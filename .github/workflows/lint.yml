@@ -1,0 +1,59 @@
+---
+name: Lint
+
+on:
+  pull_request:
+    branches:
+      - main
+
+concurrency:
+  group: ci-lint-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  statuses: write
+
+jobs:
+  lint-code-base:
+    name: Lint Code Base
+    runs-on: ['ubuntu-latest']
+    timeout-minutes: 10
+
+    permissions:
+      contents: read
+      statuses: write
+
+    steps:      
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Load super-linter environment variables
+        shell: bash
+        run: cat .github/super-linter.env >> "$GITHUB_ENV"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - shell: bash
+        run: npm install
+      
+      - name: Lint Code Base
+        uses: super-linter/super-linter/slim@v6
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  check-pr-title:
+    name: Lint PR title
+    runs-on: ['ubuntu-latest']
+    timeout-minutes: 5
+
+    permissions:
+      pull-requests: read
+
+    steps:    
+      - uses: amannn/action-semantic-pull-request@v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

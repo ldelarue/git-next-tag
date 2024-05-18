@@ -1,0 +1,59 @@
+---
+name: CI on default branch
+
+on:
+  push:
+    branches: main
+
+permissions:
+  contents: write
+
+jobs:
+  compute-tag:
+    runs-on: ['ubuntu-latest'] 
+    timeout-minutes: 5
+
+    outputs:
+      tag: ${{ steps.run_action.outputs.tag }}
+      previous-tag: ${{ steps.run_action.outputs.previous-tag }}
+
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: ./
+        id: run_action
+        with:
+          tag-prefix: v
+
+  release-draft:
+    if: always() && (needs.compute-tag.outputs.tag != '')
+    runs-on: ['ubuntu-latest'] 
+    timeout-minutes: 5
+    needs: 
+      - compute-tag
+
+    outputs:
+      release-tag-ref: ${{ steps.release.outputs.release-tag-ref }}
+
+    permissions:
+      contents: write
+  
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./.github/actions/gh-release-draft
+        id: release
+        with:
+          tag: ${{ needs.compute-tag.outputs.tag }}
+          old-tag: ${{ needs.compute-tag.outputs.previous-tag }}
+          branch: ${{ github.ref_name }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - shell: bash
+        run: echo "Draft release created at ${{ steps.release.outputs.release-tag-ref }}"
