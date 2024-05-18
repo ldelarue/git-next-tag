@@ -29,6 +29,11 @@ inputs:
     description: |
       Semantic Versioning Metadata part of resulted tag. <https://semver.org/#spec-item-10>
       For more details, read <https://semver.org/#backusnaur-form-grammar-for-valid-semver-versions>
+  scope:
+    required: false
+    description: |
+      The Conventional-Commit scope to filter commits for version calculation.
+
 outputs:
   tag:
     description: |

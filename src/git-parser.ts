@@ -5,8 +5,8 @@ export interface GitCommit {
   message: string
 }
 
-export async function getCommits (tag: string, ref: string): Promise<GitCommit[]> {
-  const gitLogCommand = getCommitsGitCommand(tag, ref)
+export async function getCommits (tag: string, ref: string, pattern: string = ''): Promise<GitCommit[]> {
+  const gitLogCommand = getCommitsGitCommand(tag, ref, pattern)
   const { stdout, stderr, exitCode } = await execGitCommand(gitLogCommand)
 
   if (exitCode !== 0) {
@@ -37,10 +37,12 @@ export async function getTags (ref: string, BashTagRegExp: string): Promise<stri
   return stdout.split('\n')
 }
 
-function getCommitsGitCommand (base: string = '', head: string = ''): string {
+function getCommitsGitCommand (base: string = '', head: string = '', messageFilterRegExp: string = ''): string {
   // Get all commits from the git history from the base to the head in json format.
   const range = (base === '') ? head : `${base}..${head}`
-  return `git log --pretty='{ "hash": "%H", "message": "%s" }' --reverse ${range}`
+  return '' +
+    `git log --pretty='{ "hash": "%H", "message": "%s" }' --reverse ${range}` +
+    `${messageFilterRegExp === '' ? '' : ` | grep -E '"message": "${messageFilterRegExp}' || true`}`
 }
 
 function getMostRecentTagsGitCommand (ref: string, ResultedBashTagRegExp: string): string {
