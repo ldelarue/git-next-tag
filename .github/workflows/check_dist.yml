@@ -4,6 +4,11 @@ name: Check Transpiled JavaScript
 
 on:
   pull_request:
+    paths:
+      - 'src/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/check_dist.yml'
 
 permissions: 
   contents: read
