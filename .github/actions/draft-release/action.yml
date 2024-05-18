@@ -1,0 +1,51 @@
+name: Draft Release
+
+inputs:
+  tag:
+    required: true
+    description: Git tag name associated with the draft Release.
+  old-tag:
+    required: false
+    description: Existing git tag in the git history. If set, it generates the release note from this.
+  branch:
+    required: false
+    description: Git branch as target for the draft Release.
+    default: ${{ github.base_ref || github.ref_name }}
+  as-prerelease:
+    required: false
+    description: Set the option "prerelease".
+    default: false
+
+outputs:
+  release-tag-ref:
+    value: ${{ steps.create_draft_release.outputs.release-tag-ref }}
+    description: Generated temporary unique tag linked to the GitHub draft Release.
+  
+runs:
+  using: 'composite'
+  steps:
+    - name: Check mandatory inputs
+      shell: bash
+      run: |
+        ${{ github.action_path }}/bash/check_mandatory_arguments.sh \
+          "input" \
+          "tag=${{ inputs.tag }}" \
+          "branch=${{ inputs.branch }}"
+
+    - name: Check mandatory environment variables
+      shell: bash
+      run: |
+        ${{ github.action_path }}/bash/check_mandatory_arguments.sh \
+          "environment variable" \
+          "GITHUB_TOKEN=${{ env.GITHUB_TOKEN }}" 
+
+    - name: Create a draft release
+      id: create_draft_release
+      shell: bash
+      run: |
+        ${{ github.action_path }}/bash/create_draft_release.sh \
+          "${{ inputs.tag }}" \
+          "${{ inputs.old-tag }}" \
+          "${{ inputs.branch }}" \
+          "${{ inputs.as-prerelease }}" \
+          "${{ github.repository }}"

@@ -1,0 +1,41 @@
+name: git-next-tag
+description: |
+  Create a new git tag based on git history following Conventional-Commits / SemVer specifications.
+  - This action will fail if there is no valid tags in git history.
+
+inputs:
+  tag-prefix:
+    required: false
+    description: |
+      Human readable word before the Semantic Versioning part of resulted tag.
+      - Only "a-Z", "0-9" and "- _" caracters allowed.
+      - Do not begin with "-" or "_".
+      - Do not end with a number.
+  ref:
+    required: false
+    description: |
+      The branch, tag or SHA as head. Used to define the basehead between two commits for version calculation.
+      - If not specified, this defaults to the SHA of the commit triggering the workflow.
+  semver-prerelease:
+    required: false
+    description: |
+      Semantic Versioning Prerelease part of resulted tag. <https://semver.org/#spec-item-9>
+      For more details, read <https://semver.org/#backusnaur-form-grammar-for-valid-semver-versions>
+  semver-build:
+    required: false
+    description: |
+      Semantic Versioning Metadata part of resulted tag. <https://semver.org/#spec-item-10>
+      For more details, read <https://semver.org/#backusnaur-form-grammar-for-valid-semver-versions>
+outputs:
+  tag:
+    description: |
+      New tag computed from git history. 
+      - Equals to '' if there is no version change.
+  previous-tag:
+    description: |
+      Tag found in git history and used as basehead for version calculation. Useful for release management.
+      - Never equals to ''.
+
+runs:
+  using: 'node20'
+  main: 'dist/index.js'
