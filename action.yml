@@ -1,7 +1,10 @@
 name: git-next-tag
 description: |
-  Create a new git tag based on git history following Conventional-Commits / SemVer specifications.
-  - This action will fail if there is no valid tags in git history.
+  Make a new git tag name based on git history. This action strictly follows Conventional-Commits / SemVer specifications.
+
+branding:
+  icon: tag
+  color: purple
 
 inputs:
   tag-prefix:
