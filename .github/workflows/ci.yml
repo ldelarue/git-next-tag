@@ -24,9 +24,8 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          path: ./git-next-tag
 
-      - uses: ./git-next-tag/
+      - uses: ./
         id: run_action
         with:
           tag-prefix: v
