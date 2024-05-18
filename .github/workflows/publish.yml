@@ -19,19 +19,21 @@ jobs:
     
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Update branches
         shell: bash
         run: |
-          major_branch=$(grep -oE "v[0-9]+" <<< ${{ github.event.release.tag_name }})
-          minor_branch=$(grep -oE "v[0-9]+\.[0-9]" <<< ${{ github.event.release.tag_name }})
+          major_branch=$(grep -oE "v[0-9]+" <<< "$(echo 'v0.1.0')")
+          minor_branch=$(grep -oE "v[0-9]+\.[0-9]" <<< "$(echo 'v0.1.0')")
           
           for branch in $major_branch $minor_branch; do
-            if ! git fetch --all && git branch -r | grep "origin/$branch"; then
-              echo "'$branch' does not exist on the remote. Creating it from 'main'."
-              git checkout main && git pull origin main && git checkout -b "$branch" && git push -u origin "$branch"
+            if ! git branch -r | grep "origin/$branch"; then
+                echo "'$branch' does not exist on the remote. Creating it from 'main'."
+                git checkout main && git pull origin main && git checkout -b "$branch" && git push -u origin "$branch"
             else
-              echo "'$branch' exists on the remote. Rebasing from 'main'."
-              git checkout "$branch" && git pull origin "$branch" && git rebase origin/main && git push origin "$branch" --force-with-lease
+                echo "'$branch' exists on the remote. Rebasing from 'main'."
+                git checkout "$branch" && git pull origin "$branch" && git rebase origin/main && git push origin "$branch" --force-with-lease
             fi
           done
