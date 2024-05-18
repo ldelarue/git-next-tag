@@ -24,8 +24,12 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          
+      - uses: actions/checkout@v4
+        with:
+          path: git-next-tag
 
-      - uses: ./
+      - uses: ./git-next-tag/
         id: run_action
         with:
           tag-prefix: v
@@ -46,7 +50,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: ./.github/actions/gh-release-draft/
+      - uses: ./.github/actions/draft-release/
         id: release
         with:
           tag: ${{ needs.compute-tag.outputs.tag }}
