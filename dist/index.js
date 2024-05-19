@@ -35287,6 +35287,7 @@ try {
     (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.setOutput)('tag', outputs.tag);
 }
 catch (error) {
+    console.log(error);
     (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.setFailed)(error.message);
 }
 
@@ -35317,7 +35318,10 @@ async function getCommits(tag, ref, pattern = '') {
     if (stdout === '') {
         return [];
     }
-    return stdout.split('\n').map((rawCommit) => JSON.parse(rawCommit));
+    return stdout.split('\n').map((rawCommit) => {
+        const { hash, message } = rawCommit.match(/^(?<hash>[0-9a-f]{40}) (?<message>.*)/)?.groups ?? { hash: '', message: '' };
+        return { hash, message };
+    });
 }
 async function getTags(ref, BashTagRegExp) {
     const tagsGitCommand = getMostRecentTagsGitCommand(ref, BashTagRegExp);
@@ -35334,7 +35338,8 @@ function getCommitsGitCommand(base = '', head = '', messageFilterRegExp = '') {
     // Get all commits from the git history from the base to the head in json format.
     const range = (base === '') ? head : `${base}..${head}`;
     return '' +
-        `git log --pretty='{ "hash": "%H", "message": "%s" }' --reverse ${range}` +
+        // format: '{hash} {message}'
+        `git log --pretty='%H %s' --reverse ${range}` +
         `${messageFilterRegExp === '' ? '' : ` | grep -E '"message": "${messageFilterRegExp}' || true`}`;
 }
 function getMostRecentTagsGitCommand(ref, ResultedBashTagRegExp) {
