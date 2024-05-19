@@ -32,7 +32,7 @@ async function parseGitHistorySemver (ref: string, prefix: string, prereleaseMod
   if (tags.length === 0) {
     throw Error('No tags found in the git history.')
   }
-  const commits = await getCommits(tags[0], ref, `[a-zA-Z]+\\(${escapeRegExp(scope)}\\):`)
+  const commits = await getCommits(tags[0], ref, `${scope === '' ? '' : `[a-zA-Z]+\\(${escapeRegExp(scope)}\\):`}`)
   return { tags, commits }
 }
 
