@@ -44,7 +44,7 @@ function getCommitsGitCommand (base: string = '', head: string = '', messageFilt
   return '' +
     // format: '{hash} {message}'
     `git log --pretty='%H %s' --reverse ${range}` +
-    `${messageFilterRegExp === '' ? '' : ` | grep -E '"message": "${messageFilterRegExp}' || true`}`
+    `${messageFilterRegExp === '' ? '' : ` | grep -E ' ${messageFilterRegExp}' || true`}`
 }
 
 function getMostRecentTagsGitCommand (ref: string, ResultedBashTagRegExp: string): string {

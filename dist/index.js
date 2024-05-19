@@ -35340,7 +35340,7 @@ function getCommitsGitCommand(base = '', head = '', messageFilterRegExp = '') {
     return '' +
         // format: '{hash} {message}'
         `git log --pretty='%H %s' --reverse ${range}` +
-        `${messageFilterRegExp === '' ? '' : ` | grep -E '"message": "${messageFilterRegExp}' || true`}`;
+        `${messageFilterRegExp === '' ? '' : ` | grep -E ' ${messageFilterRegExp}' || true`}`;
 }
 function getMostRecentTagsGitCommand(ref, ResultedBashTagRegExp) {
     return '' +
