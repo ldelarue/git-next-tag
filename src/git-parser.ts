@@ -17,9 +17,10 @@ export async function getCommits (tag: string, ref: string, pattern: string = ''
   if (stdout === '') {
     return []
   }
-  return stdout.split('\n').map((rawCommit) => (
-    JSON.parse(rawCommit) as GitCommit
-  ))
+  return stdout.split('\n').map((rawCommit) => {
+    const { hash, message } = rawCommit.match(/^(?<hash>[0-9a-f]{40}) (?<message>.*)/)?.groups ?? { hash: '', message: '' }
+    return { hash, message }
+  })
 }
 
 export async function getTags (ref: string, BashTagRegExp: string): Promise<string[]> {
@@ -41,7 +42,8 @@ function getCommitsGitCommand (base: string = '', head: string = '', messageFilt
   // Get all commits from the git history from the base to the head in json format.
   const range = (base === '') ? head : `${base}..${head}`
   return '' +
-    `git log --pretty='{ "hash": "%H", "message": "%s" }' --reverse ${range}` +
+    // format: '{hash} {message}'
+    `git log --pretty='%H %s' --reverse ${range}` +
     `${messageFilterRegExp === '' ? '' : ` | grep -E '"message": "${messageFilterRegExp}' || true`}`
 }
 

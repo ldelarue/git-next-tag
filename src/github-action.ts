@@ -30,5 +30,6 @@ try {
   setOutput('previous-tag', outputs.previousTag)
   setOutput('tag', outputs.tag)
 } catch (error) {
+  console.log(error)
   setFailed(error.message)
 }
