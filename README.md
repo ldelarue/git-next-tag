@@ -61,7 +61,7 @@ jobs:
 
       - shell: bash
         run: |
-          echo "::notice::Generated tag is '${{ steps.run_action.outputs.tag }}'"
+          echo "::notice::Generated tag is '${{ steps.calculate_next_version.outputs.tag }}'"
 ```
 
 > [!TIP]
