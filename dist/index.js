@@ -4152,10 +4152,10 @@ const { resolve } = __nccwpck_require__(1017)
 
 async function createWriterOpts () {
   const [template, header, commit, footer] = await Promise.all([
-    readFile(__nccwpck_require__.ab + "template1.hbs", 'utf-8'),
-    readFile(__nccwpck_require__.ab + "header1.hbs", 'utf-8'),
-    readFile(__nccwpck_require__.ab + "commit1.hbs", 'utf-8'),
-    readFile(__nccwpck_require__.ab + "footer1.hbs", 'utf-8')
+    readFile(__nccwpck_require__.ab + "template.hbs", 'utf-8'),
+    readFile(__nccwpck_require__.ab + "header.hbs", 'utf-8'),
+    readFile(__nccwpck_require__.ab + "commit.hbs", 'utf-8'),
+    readFile(__nccwpck_require__.ab + "footer.hbs", 'utf-8')
   ])
   const writerOpts = getWriterOpts()
 
@@ -4253,384 +4253,6 @@ function getWriterOpts () {
     noteGroupsSort: 'title',
     notesSort: compareFunc
   }
-}
-
-
-/***/ }),
-
-/***/ 5498:
-/***/ ((__unused_webpack_module, exports) => {
-
-
-
-const DEFAULT_COMMIT_TYPES = Object.freeze([
-  { type: 'feat', section: 'Features' },
-  { type: 'feature', section: 'Features' },
-  { type: 'fix', section: 'Bug Fixes' },
-  { type: 'perf', section: 'Performance Improvements' },
-  { type: 'revert', section: 'Reverts' },
-  { type: 'docs', section: 'Documentation', hidden: true },
-  { type: 'style', section: 'Styles', hidden: true },
-  { type: 'chore', section: 'Miscellaneous Chores', hidden: true },
-  { type: 'refactor', section: 'Code Refactoring', hidden: true },
-  { type: 'test', section: 'Tests', hidden: true },
-  { type: 'build', section: 'Build System', hidden: true },
-  { type: 'ci', section: 'Continuous Integration', hidden: true }
-].map(Object.freeze))
-
-exports.DEFAULT_COMMIT_TYPES = DEFAULT_COMMIT_TYPES
-
-
-/***/ }),
-
-/***/ 8283:
-/***/ ((module) => {
-
-
-
-function createConventionalChangelogOpts (parserOpts, writerOpts) {
-  return {
-    parserOpts,
-    writerOpts
-  }
-}
-
-module.exports.createConventionalChangelogOpts = createConventionalChangelogOpts
-
-
-/***/ }),
-
-/***/ 2287:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-
-
-const { addBangNotes } = __nccwpck_require__(4672)
-
-function createConventionalRecommendedBumpOpts (config, parserOpts) {
-  return {
-    parserOpts,
-
-    whatBump (commits) {
-      let level = 2
-      let breakings = 0
-      let features = 0
-
-      commits.forEach(commit => {
-        // adds additional breaking change notes
-        // for the special case, test(system)!: hello world, where there is
-        // a '!' but no 'BREAKING CHANGE' in body:
-        addBangNotes(commit)
-        if (commit.notes.length > 0) {
-          breakings += commit.notes.length
-          level = 0
-        } else if (commit.type === 'feat' || commit.type === 'feature') {
-          features += 1
-          if (level === 2) {
-            level = 1
-          }
-        }
-      })
-
-      if (config?.preMajor && level < 2) {
-        level++
-      }
-
-      return {
-        level,
-        reason: breakings === 1
-          ? `There is ${breakings} BREAKING CHANGE and ${features} features`
-          : `There are ${breakings} BREAKING CHANGES and ${features} features`
-      }
-    }
-  }
-}
-
-module.exports.createConventionalRecommendedBumpOpts = createConventionalRecommendedBumpOpts
-
-
-/***/ }),
-
-/***/ 8761:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-
-
-const { DEFAULT_COMMIT_TYPES } = __nccwpck_require__(5498)
-const { createParserOpts } = __nccwpck_require__(748)
-const { createWriterOpts } = __nccwpck_require__(4256)
-const { createConventionalChangelogOpts } = __nccwpck_require__(8283)
-const { createConventionalRecommendedBumpOpts } = __nccwpck_require__(2287)
-
-async function createPreset (config) {
-  const parserOpts = createParserOpts(config)
-  const writerOpts = await createWriterOpts(config)
-  const recommendedBumpOpts = createConventionalRecommendedBumpOpts(config, parserOpts)
-  const conventionalChangelog = createConventionalChangelogOpts(parserOpts, writerOpts)
-
-  return {
-    gitRawCommitsOpts: {
-      ignore: config?.ignoreCommits,
-      noMerges: null
-    },
-    parserOpts,
-    writerOpts,
-    recommendedBumpOpts,
-    conventionalChangelog
-  }
-}
-
-module.exports = createPreset
-
-module.exports.DEFAULT_COMMIT_TYPES = DEFAULT_COMMIT_TYPES
-
-
-/***/ }),
-
-/***/ 748:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-
-
-const { breakingHeaderPattern } = __nccwpck_require__(4672)
-
-function createParserOpts (config) {
-  return {
-    headerPattern: /^(\w*)(?:\((.*)\))?!?: (.*)$/,
-    breakingHeaderPattern,
-    headerCorrespondence: [
-      'type',
-      'scope',
-      'subject'
-    ],
-    noteKeywords: ['BREAKING CHANGE', 'BREAKING-CHANGE'],
-    revertPattern: /^(?:Revert|revert:)\s"?([\s\S]+?)"?\s*This reverts commit (\w*)\./i,
-    revertCorrespondence: ['header', 'hash'],
-    issuePrefixes: config?.issuePrefixes || ['#']
-  }
-}
-
-module.exports.createParserOpts = createParserOpts
-
-
-/***/ }),
-
-/***/ 4672:
-/***/ ((module) => {
-
-const breakingHeaderPattern = /^(\w*)(?:\((.*)\))?!: (.*)$/
-
-module.exports.breakingHeaderPattern = breakingHeaderPattern
-
-function addBangNotes (commit) {
-  const match = commit.header.match(breakingHeaderPattern)
-  if (match && commit.notes.length === 0) {
-    const noteText = match[3] // the description of the change.
-    commit.notes.push({
-      text: noteText
-    })
-  }
-}
-
-module.exports.addBangNotes = addBangNotes
-
-
-/***/ }),
-
-/***/ 4256:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-
-
-const compareFunc = __nccwpck_require__(4623)
-const { readFile } = (__nccwpck_require__(7147).promises)
-const { resolve } = __nccwpck_require__(1017)
-const { DEFAULT_COMMIT_TYPES } = __nccwpck_require__(5498)
-const { addBangNotes } = __nccwpck_require__(4672)
-
-const releaseAsRegex = /release-as:\s*\w*@?([0-9]+\.[0-9]+\.[0-9a-z]+(-[0-9a-z.]+)?)\s*/i
-/**
- * Handlebar partials for various property substitutions based on commit context.
- */
-const owner = '{{#if this.owner}}{{~this.owner}}{{else}}{{~@root.owner}}{{/if}}'
-const host = '{{~@root.host}}'
-const repository = '{{#if this.repository}}{{~this.repository}}{{else}}{{~@root.repository}}{{/if}}'
-
-async function createWriterOpts (config) {
-  const finalConfig = {
-    types: DEFAULT_COMMIT_TYPES,
-    issueUrlFormat: '{{host}}/{{owner}}/{{repository}}/issues/{{id}}',
-    commitUrlFormat: '{{host}}/{{owner}}/{{repository}}/commit/{{hash}}',
-    compareUrlFormat: '{{host}}/{{owner}}/{{repository}}/compare/{{previousTag}}...{{currentTag}}',
-    userUrlFormat: '{{host}}/{{user}}',
-    issuePrefixes: ['#'],
-    ...config
-  }
-  const commitUrlFormat = expandTemplate(finalConfig.commitUrlFormat, {
-    host,
-    owner,
-    repository
-  })
-  const compareUrlFormat = expandTemplate(finalConfig.compareUrlFormat, {
-    host,
-    owner,
-    repository
-  })
-  const issueUrlFormat = expandTemplate(finalConfig.issueUrlFormat, {
-    host,
-    owner,
-    repository,
-    id: '{{this.issue}}',
-    prefix: '{{this.prefix}}'
-  })
-
-  const [
-    template,
-    header,
-    commit,
-    footer
-  ] = await Promise.all([
-    readFile(__nccwpck_require__.ab + "template.hbs", 'utf-8'),
-    readFile(__nccwpck_require__.ab + "header.hbs", 'utf-8'),
-    readFile(__nccwpck_require__.ab + "commit.hbs", 'utf-8'),
-    readFile(__nccwpck_require__.ab + "footer.hbs", 'utf-8')
-  ])
-  const writerOpts = getWriterOpts(finalConfig)
-
-  writerOpts.mainTemplate = template
-  writerOpts.headerPartial = header
-    .replace(/{{compareUrlFormat}}/g, compareUrlFormat)
-  writerOpts.commitPartial = commit
-    .replace(/{{commitUrlFormat}}/g, commitUrlFormat)
-    .replace(/{{issueUrlFormat}}/g, issueUrlFormat)
-  writerOpts.footerPartial = footer
-
-  return writerOpts
-}
-
-module.exports.createWriterOpts = createWriterOpts
-
-function getWriterOpts (config) {
-  const commitGroupOrder = config.types.flatMap(t => t.section).filter(t => t)
-
-  return {
-    transform: (commit, context) => {
-      let discard = true
-      const issues = []
-      const entry = findTypeEntry(config.types, commit)
-
-      // adds additional breaking change notes
-      // for the special case, test(system)!: hello world, where there is
-      // a '!' but no 'BREAKING CHANGE' in body:
-      addBangNotes(commit)
-
-      // Add an entry in the CHANGELOG if special Release-As footer
-      // is used:
-      if ((commit.footer && releaseAsRegex.test(commit.footer)) ||
-          (commit.body && releaseAsRegex.test(commit.body))) {
-        discard = false
-      }
-
-      commit.notes.forEach(note => {
-        note.title = 'BREAKING CHANGES'
-        discard = false
-      })
-
-      // breaking changes attached to any type are still displayed.
-      if (discard && (entry === undefined ||
-          entry.hidden)) return
-
-      if (entry) commit.type = entry.section
-
-      if (commit.scope === '*') {
-        commit.scope = ''
-      }
-
-      if (typeof commit.hash === 'string') {
-        commit.shortHash = commit.hash.substring(0, 7)
-      }
-
-      if (typeof commit.subject === 'string') {
-        // Issue URLs.
-        config.issuePrefixes.join('|')
-        const issueRegEx = '(' + config.issuePrefixes.join('|') + ')' + '([a-z0-9]+)'
-        const re = new RegExp(issueRegEx, 'g')
-
-        commit.subject = commit.subject.replace(re, (_, prefix, issue) => {
-          issues.push(prefix + issue)
-          const url = expandTemplate(config.issueUrlFormat, {
-            host: context.host,
-            owner: context.owner,
-            repository: context.repository,
-            id: issue,
-            prefix
-          })
-          return `[${prefix}${issue}](${url})`
-        })
-        // User URLs.
-        commit.subject = commit.subject.replace(/\B@([a-z0-9](?:-?[a-z0-9/]){0,38})/g, (_, user) => {
-          // TODO: investigate why this code exists.
-          if (user.includes('/')) {
-            return `@${user}`
-          }
-
-          const usernameUrl = expandTemplate(config.userUrlFormat, {
-            host: context.host,
-            owner: context.owner,
-            repository: context.repository,
-            user
-          })
-
-          return `[@${user}](${usernameUrl})`
-        })
-      }
-
-      // remove references that already appear in the subject
-      commit.references = commit.references.filter(reference => {
-        if (issues.indexOf(reference.prefix + reference.issue) === -1) {
-          return true
-        }
-
-        return false
-      })
-
-      return commit
-    },
-    groupBy: 'type',
-    // the groupings of commit messages, e.g., Features vs., Bug Fixes, are
-    // sorted based on their probable importance:
-    commitGroupsSort: (a, b) => {
-      const gRankA = commitGroupOrder.indexOf(a.title)
-      const gRankB = commitGroupOrder.indexOf(b.title)
-      return gRankA - gRankB
-    },
-    commitsSort: ['scope', 'subject'],
-    noteGroupsSort: 'title',
-    notesSort: compareFunc
-  }
-}
-
-function findTypeEntry (types, commit) {
-  const typeKey = (commit.revert ? 'revert' : (commit.type || '')).toLowerCase()
-  return types.find((entry) => {
-    if (entry.type !== typeKey) {
-      return false
-    }
-    if (entry.scope && entry.scope !== commit.scope) {
-      return false
-    }
-    return true
-  })
-}
-
-// expand on the simple mustache-style templates supported in
-// configuration (we may eventually want to use handlebars for this).
-function expandTemplate (template, context) {
-  let expanded = template
-  Object.keys(context).forEach(key => {
-    expanded = expanded.replace(new RegExp(`{{${key}}}`, 'g'), context[key])
-  })
-  return expanded
 }
 
 
@@ -35260,7 +34882,7 @@ exports["default"] = _default;
 __nccwpck_require__.a(module, async (__webpack_handle_async_dependencies__, __webpack_async_result__) => { try {
 /* harmony import */ var _actions_core__WEBPACK_IMPORTED_MODULE_0__ = __nccwpck_require__(2186);
 /* harmony import */ var _actions_core__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__nccwpck_require__.n(_actions_core__WEBPACK_IMPORTED_MODULE_0__);
-/* harmony import */ var _semver_js__WEBPACK_IMPORTED_MODULE_1__ = __nccwpck_require__(3482);
+/* harmony import */ var _semver_js__WEBPACK_IMPORTED_MODULE_1__ = __nccwpck_require__(9215);
 
 
 try {
@@ -35278,7 +34900,8 @@ try {
         mandatory,
         prefix: (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput)('tag-prefix'),
         build: ((0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput)('semver-build') !== '') ? `+${(0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput)('semver-build')}` : '',
-        prerelease: ((0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput)('semver-prerelease') !== '') ? `-${(0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput)('semver-prerelease')}` : ''
+        prerelease: ((0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput)('semver-prerelease') !== '') ? `-${(0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput)('semver-prerelease')}` : '',
+        scope: (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput)('scope')
     };
     const outputs = await (0,_semver_js__WEBPACK_IMPORTED_MODULE_1__/* .nextSemanticVersion */ .g)(inputs);
     console.log(outputs);
@@ -35294,7 +34917,7 @@ __webpack_async_result__();
 
 /***/ }),
 
-/***/ 3482:
+/***/ 9215:
 /***/ ((__unused_webpack_module, __webpack_exports__, __nccwpck_require__) => {
 
 
@@ -35307,8 +34930,8 @@ __nccwpck_require__.d(__webpack_exports__, {
 var exec = __nccwpck_require__(1514);
 ;// CONCATENATED MODULE: ./src/git-parser.ts
 
-async function getCommits(tag, ref) {
-    const gitLogCommand = getCommitsGitCommand(tag, ref);
+async function getCommits(tag, ref, pattern = '') {
+    const gitLogCommand = getCommitsGitCommand(tag, ref, pattern);
     const { stdout, stderr, exitCode } = await execGitCommand(gitLogCommand);
     if (exitCode !== 0) {
         throw Error(`Bash command failed. '${gitLogCommand}'\n${stderr}`);
@@ -35329,10 +34952,12 @@ async function getTags(ref, BashTagRegExp) {
     }
     return stdout.split('\n');
 }
-function getCommitsGitCommand(base = '', head = '') {
+function getCommitsGitCommand(base = '', head = '', messageFilterRegExp = '') {
     // Get all commits from the git history from the base to the head in json format.
     const range = (base === '') ? head : `${base}..${head}`;
-    return `git log --pretty='{ "hash": "%H", "message": "%s" }' --reverse ${range}`;
+    return '' +
+        `git log --pretty='{ "hash": "%H", "message": "%s" }' --reverse ${range}` +
+        `${messageFilterRegExp === '' ? '' : ` | grep -E '"message": "${messageFilterRegExp}' || true`}`;
 }
 function getMostRecentTagsGitCommand(ref, ResultedBashTagRegExp) {
     return '' +
@@ -40015,9 +39640,9 @@ var DataView = _getNative(_root, 'DataView');
 
 
 /* Built-in method references that are verified to be native. */
-var Promise = _getNative(_root, 'Promise');
+var _Promise_Promise = _getNative(_root, 'Promise');
 
-/* harmony default export */ const _Promise = (Promise);
+/* harmony default export */ const _Promise = (_Promise_Promise);
 
 ;// CONCATENATED MODULE: ./node_modules/lodash-es/_Set.js
 
@@ -40582,9 +40207,324 @@ async function analyzeCommits(pluginConfig, context) {
   return releaseType;
 }
 
-// EXTERNAL MODULE: ./node_modules/conventional-changelog-conventionalcommits/index.js
-var conventional_changelog_conventionalcommits = __nccwpck_require__(8761);
-var conventional_changelog_conventionalcommits_default = /*#__PURE__*/__nccwpck_require__.n(conventional_changelog_conventionalcommits);
+;// CONCATENATED MODULE: ./node_modules/conventional-changelog-conventionalcommits/src/constants.js
+const DEFAULT_COMMIT_TYPES = Object.freeze([
+  { type: 'feat', section: 'Features' },
+  { type: 'feature', section: 'Features' },
+  { type: 'fix', section: 'Bug Fixes' },
+  { type: 'perf', section: 'Performance Improvements' },
+  { type: 'revert', section: 'Reverts' },
+  { type: 'docs', section: 'Documentation', hidden: true },
+  { type: 'style', section: 'Styles', hidden: true },
+  { type: 'chore', section: 'Miscellaneous Chores', hidden: true },
+  { type: 'refactor', section: 'Code Refactoring', hidden: true },
+  { type: 'test', section: 'Tests', hidden: true },
+  { type: 'build', section: 'Build System', hidden: true },
+  { type: 'ci', section: 'Continuous Integration', hidden: true }
+].map(Object.freeze))
+
+;// CONCATENATED MODULE: ./node_modules/conventional-changelog-conventionalcommits/src/utils.js
+const breakingHeaderPattern = /^(\w*)(?:\((.*)\))?!: (.*)$/
+
+// todo: drop, CommitParser currently handles this case
+function addBangNotes (commit) {
+  const match = commit.header.match(breakingHeaderPattern)
+  if (match && commit.notes.length === 0) {
+    const noteText = match[3] // the description of the change.
+
+    return [
+      {
+        title: 'BREAKING CHANGE',
+        text: noteText
+      }
+    ]
+  }
+
+  return commit.notes
+}
+
+;// CONCATENATED MODULE: ./node_modules/conventional-changelog-conventionalcommits/src/parser.js
+
+
+function createParserOpts (config) {
+  return {
+    headerPattern: /^(\w*)(?:\((.*)\))?!?: (.*)$/,
+    breakingHeaderPattern: breakingHeaderPattern,
+    headerCorrespondence: [
+      'type',
+      'scope',
+      'subject'
+    ],
+    noteKeywords: ['BREAKING CHANGE', 'BREAKING-CHANGE'],
+    revertPattern: /^(?:Revert|revert:)\s"?([\s\S]+?)"?\s*This reverts commit (\w*)\./i,
+    revertCorrespondence: ['header', 'hash'],
+    issuePrefixes: config?.issuePrefixes || ['#']
+  }
+}
+
+;// CONCATENATED MODULE: external "fs/promises"
+const promises_namespaceObject = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("fs/promises");
+// EXTERNAL MODULE: external "path"
+var external_path_ = __nccwpck_require__(1017);
+// EXTERNAL MODULE: external "url"
+var external_url_ = __nccwpck_require__(7310);
+// EXTERNAL MODULE: ./node_modules/compare-func/index.js
+var compare_func = __nccwpck_require__(4623);
+;// CONCATENATED MODULE: ./node_modules/conventional-changelog-conventionalcommits/src/writer.js
+
+
+
+
+
+
+
+const dirname = (0,external_url_.fileURLToPath)(new URL(/* asset import */ __nccwpck_require__(278), __nccwpck_require__.b))
+const releaseAsRegex = /release-as:\s*\w*@?([0-9]+\.[0-9]+\.[0-9a-z]+(-[0-9a-z.]+)?)\s*/i
+/**
+ * Handlebar partials for various property substitutions based on commit context.
+ */
+const owner = '{{#if this.owner}}{{~this.owner}}{{else}}{{~@root.owner}}{{/if}}'
+const host = '{{~@root.host}}'
+const repository = '{{#if this.repository}}{{~this.repository}}{{else}}{{~@root.repository}}{{/if}}'
+
+async function createWriterOpts (config) {
+  const finalConfig = {
+    types: DEFAULT_COMMIT_TYPES,
+    issueUrlFormat: '{{host}}/{{owner}}/{{repository}}/issues/{{id}}',
+    commitUrlFormat: '{{host}}/{{owner}}/{{repository}}/commit/{{hash}}',
+    compareUrlFormat: '{{host}}/{{owner}}/{{repository}}/compare/{{previousTag}}...{{currentTag}}',
+    userUrlFormat: '{{host}}/{{user}}',
+    issuePrefixes: ['#'],
+    ...config
+  }
+  const commitUrlFormat = expandTemplate(finalConfig.commitUrlFormat, {
+    host,
+    owner,
+    repository
+  })
+  const compareUrlFormat = expandTemplate(finalConfig.compareUrlFormat, {
+    host,
+    owner,
+    repository
+  })
+  const issueUrlFormat = expandTemplate(finalConfig.issueUrlFormat, {
+    host,
+    owner,
+    repository,
+    id: '{{this.issue}}',
+    prefix: '{{this.prefix}}'
+  })
+
+  const [
+    template,
+    header,
+    commit,
+    footer
+  ] = await Promise.all([
+    (0,promises_namespaceObject.readFile)((0,external_path_.resolve)(dirname, './templates/template.hbs'), 'utf-8'),
+    (0,promises_namespaceObject.readFile)((0,external_path_.resolve)(dirname, './templates/header.hbs'), 'utf-8'),
+    (0,promises_namespaceObject.readFile)((0,external_path_.resolve)(dirname, './templates/commit.hbs'), 'utf-8'),
+    (0,promises_namespaceObject.readFile)((0,external_path_.resolve)(dirname, './templates/footer.hbs'), 'utf-8')
+  ])
+  const writerOpts = getWriterOpts(finalConfig)
+
+  writerOpts.mainTemplate = template
+  writerOpts.headerPartial = header
+    .replace(/{{compareUrlFormat}}/g, compareUrlFormat)
+  writerOpts.commitPartial = commit
+    .replace(/{{commitUrlFormat}}/g, commitUrlFormat)
+    .replace(/{{issueUrlFormat}}/g, issueUrlFormat)
+  writerOpts.footerPartial = footer
+
+  return writerOpts
+}
+
+function getWriterOpts (config) {
+  const commitGroupOrder = config.types.flatMap(t => t.section).filter(t => t)
+
+  return {
+    transform: (commit, context) => {
+      let discard = true
+      const issues = []
+      const entry = findTypeEntry(config.types, commit)
+
+      // adds additional breaking change notes
+      // for the special case, test(system)!: hello world, where there is
+      // a '!' but no 'BREAKING CHANGE' in body:
+      let notes = addBangNotes(commit)
+
+      // Add an entry in the CHANGELOG if special Release-As footer
+      // is used:
+      if ((commit.footer && releaseAsRegex.test(commit.footer)) ||
+          (commit.body && releaseAsRegex.test(commit.body))) {
+        discard = false
+      }
+
+      notes = notes.map(note => {
+        discard = false
+
+        return {
+          ...note,
+          title: 'BREAKING CHANGES'
+        }
+      })
+
+      // breaking changes attached to any type are still displayed.
+      if (discard && (entry === undefined ||
+          entry.hidden)) return
+
+      const type = entry
+        ? entry.section
+        : commit.type
+      const scope = commit.scope === '*'
+        ? ''
+        : commit.scope
+      const shortHash = typeof commit.hash === 'string'
+        ? commit.hash.substring(0, 7)
+        : commit.shortHash
+      let subject = commit.subject
+
+      if (typeof subject === 'string') {
+        // Issue URLs.
+        const issueRegEx = '(' + config.issuePrefixes.join('|') + ')' + '([a-z0-9]+)'
+        const re = new RegExp(issueRegEx, 'g')
+
+        subject = subject.replace(re, (_, prefix, issue) => {
+          issues.push(prefix + issue)
+          const url = expandTemplate(config.issueUrlFormat, {
+            host: context.host,
+            owner: context.owner,
+            repository: context.repository,
+            id: issue,
+            prefix
+          })
+          return `[${prefix}${issue}](${url})`
+        })
+        // User URLs.
+        subject = subject.replace(/\B@([a-z0-9](?:-?[a-z0-9/]){0,38})/g, (_, user) => {
+          // TODO: investigate why this code exists.
+          if (user.includes('/')) {
+            return `@${user}`
+          }
+
+          const usernameUrl = expandTemplate(config.userUrlFormat, {
+            host: context.host,
+            owner: context.owner,
+            repository: context.repository,
+            user
+          })
+
+          return `[@${user}](${usernameUrl})`
+        })
+      }
+
+      // remove references that already appear in the subject
+      const references = commit.references.filter(reference => !issues.includes(reference.prefix + reference.issue))
+
+      return {
+        notes,
+        type,
+        scope,
+        shortHash,
+        subject,
+        references
+      }
+    },
+    groupBy: 'type',
+    // the groupings of commit messages, e.g., Features vs., Bug Fixes, are
+    // sorted based on their probable importance:
+    commitGroupsSort: (a, b) => {
+      const gRankA = commitGroupOrder.indexOf(a.title)
+      const gRankB = commitGroupOrder.indexOf(b.title)
+      return gRankA - gRankB
+    },
+    commitsSort: ['scope', 'subject'],
+    noteGroupsSort: 'title',
+    notesSort: compare_func
+  }
+}
+
+function findTypeEntry (types, commit) {
+  const typeKey = (commit.revert ? 'revert' : (commit.type || '')).toLowerCase()
+  return types.find((entry) => {
+    if (entry.type !== typeKey) {
+      return false
+    }
+    if (entry.scope && entry.scope !== commit.scope) {
+      return false
+    }
+    return true
+  })
+}
+
+// expand on the simple mustache-style templates supported in
+// configuration (we may eventually want to use handlebars for this).
+function expandTemplate (template, context) {
+  let expanded = template
+  Object.keys(context).forEach(key => {
+    expanded = expanded.replace(new RegExp(`{{${key}}}`, 'g'), context[key])
+  })
+  return expanded
+}
+
+;// CONCATENATED MODULE: ./node_modules/conventional-changelog-conventionalcommits/src/whatBump.js
+
+
+function createWhatBump (config) {
+  return function whatBump (commits) {
+    let level = 2
+    let breakings = 0
+    let features = 0
+
+    commits.forEach(commit => {
+      // adds additional breaking change notes
+      // for the special case, test(system)!: hello world, where there is
+      // a '!' but no 'BREAKING CHANGE' in body:
+      commit.notes = addBangNotes(commit)
+      if (commit.notes.length > 0) {
+        breakings += commit.notes.length
+        level = 0
+      } else if (commit.type === 'feat' || commit.type === 'feature') {
+        features += 1
+        if (level === 2) {
+          level = 1
+        }
+      }
+    })
+
+    if (config?.preMajor && level < 2) {
+      level++
+    }
+
+    return {
+      level,
+      reason: breakings === 1
+        ? `There is ${breakings} BREAKING CHANGE and ${features} features`
+        : `There are ${breakings} BREAKING CHANGES and ${features} features`
+    }
+  }
+}
+
+;// CONCATENATED MODULE: ./node_modules/conventional-changelog-conventionalcommits/src/index.js
+
+
+
+
+
+
+
+async function createPreset (config) {
+  return {
+    commits: {
+      ignore: config?.ignoreCommits,
+      merges: false
+    },
+    parser: createParserOpts(config),
+    writer: await createWriterOpts(config),
+    whatBump: createWhatBump(config)
+  }
+}
+
 // EXTERNAL MODULE: ./node_modules/semver/index.js
 var semver = __nccwpck_require__(1383);
 var semver_default = /*#__PURE__*/__nccwpck_require__.n(semver);
@@ -40597,37 +40537,33 @@ var strict_default = /*#__PURE__*/__nccwpck_require__.n(strict_namespaceObject);
 
 
 
-const TagVersionRegExps = {
+const tagVersionRegExps = {
     prefix: /^(([a-zA-Z0-9][a-zA-Z0-9_-]*[a-zA-Z_-])|([a-zA-Z]))?$/,
     core: /^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$/,
     prerelease: /^(-((0|[1-9][0-9]*|[0-9]*[a-zA-Z-][0-9a-zA-Z-]*)(\.(0|[1-9][0-9]*|[0-9]*[a-zA-Z-][0-9a-zA-Z-]*))*))?$/,
     build: /^(\+([0-9a-zA-Z-]+(\.[0-9a-zA-Z-]+)*))?$/
 };
-async function parseGitHistorySemver(ref, prefix, prereleaseMode) {
-    const BashTagVersionRegExps = {
-        core: TagVersionRegExps.core.source.replace(/[$^]/g, ''),
-        prerelease: TagVersionRegExps.prerelease.source.replace(/[$^]/g, ''),
-        build: TagVersionRegExps.build.source.replace(/[$^]/g, '')
+async function parseGitHistorySemver(ref, prefix, prereleaseMode, scope) {
+    const bashTagVersionRegExps = {
+        core: tagVersionRegExps.core.source.replace(/[$^]/g, ''),
+        prerelease: tagVersionRegExps.prerelease.source.replace(/[$^]/g, ''),
+        build: tagVersionRegExps.build.source.replace(/[$^]/g, '')
     };
     // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_expressions#escaping
     function escapeRegExp(string) {
         return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     }
     const sanitizedPrefix = escapeRegExp(prefix);
-    const { core, prerelease, build } = BashTagVersionRegExps;
+    const { core, prerelease, build } = bashTagVersionRegExps;
     const tags = await getTags(ref, `${sanitizedPrefix}${core}${prereleaseMode ? prerelease : ''}${build}`);
     if (tags.length === 0) {
         throw Error('No tags found in the git history.');
     }
-    const commits = await getCommits(tags[0], ref);
-    if (commits.length === 0) {
-        throw Error('No commits found in the git history.');
-    }
+    const commits = await getCommits(tags[0], ref, `[a-zA-Z]+\\(${escapeRegExp(scope)}\\):`);
     return { tags, commits };
 }
 function parseGitTagsAsSemver(gitTags, logger, prefix) {
     return gitTags.reduce((versions, gitTag) => {
-        // todo remove prefix
         const version = semver_default().parse(gitTag.replace(prefix, ''), {});
         if (version != null)
             versions.push(version);
@@ -40642,21 +40578,21 @@ function checkInputsWithRegexp(regex, value) {
 }
 function checkInputs(inputs) {
     [{
-            regex: TagVersionRegExps.prefix,
+            regex: tagVersionRegExps.prefix,
             value: inputs.prefix
         }, {
-            regex: TagVersionRegExps.build,
+            regex: tagVersionRegExps.build,
             value: inputs.build
         }, {
-            regex: TagVersionRegExps.prerelease,
+            regex: tagVersionRegExps.prerelease,
             value: inputs.prerelease
         }].forEach(obj => {
         checkInputsWithRegexp(obj.regex, obj.value.toString());
     });
 }
-function selectLastVersion(versions, commit, logger) {
+function selectLastVersion(versions, logger) {
     if (versions.length > 1) {
-        logger.warning(`Multiple versions found on commit ${commit.hash}: '${versions.join('; ')}'. The highest precedence one will be selected.`);
+        logger.warning(`Multiple versions found on same commit: '${versions.join('; ')}'. The highest precedence one will be selected.`);
     }
     return semver_default().rsort(versions)[0];
 }
@@ -40679,7 +40615,7 @@ function getPrereleaseType(version, releaseType) {
     return `pre${releaseType}`;
 }
 async function getReleaseType(commits, selectedVersion, isPrerelease, logger) {
-    let releaseType = await analyzeCommits({ parserOpts: (await conventional_changelog_conventionalcommits_default()()).parserOpts }, {
+    let releaseType = await analyzeCommits({ parserOpts: (await createPreset()).parserOpts }, {
         commits,
         logger: { log: logger.info.bind(console) }
     });
@@ -40703,10 +40639,14 @@ async function nextSemanticVersion(inputs) {
     checkInputs(inputs);
     const ref = inputs.mandatory.ref;
     const logger = inputs.mandatory.logger;
-    const gitParsedResult = await parseGitHistorySemver(ref, inputs.prefix, inputs.prerelease !== '');
+    const gitParsedResult = await parseGitHistorySemver(ref, inputs.prefix, inputs.prerelease !== '', inputs.scope);
     const versions = parseGitTagsAsSemver(gitParsedResult.tags, logger, inputs.prefix);
-    const selectedVersion = selectLastVersion(versions, gitParsedResult.commits[0], logger);
+    const selectedVersion = selectLastVersion(versions, logger);
     output.previousTag = `${inputs.prefix}${selectedVersion.version}`;
+    if (gitParsedResult.commits.length === 0) {
+        logger.warning('No commits found in the git history.');
+        return output;
+    }
     const releaseType = await getReleaseType(gitParsedResult.commits, selectedVersion, inputs.prerelease !== '', logger);
     if (releaseType === null) {
         return output;
@@ -40739,6 +40679,13 @@ webpackEmptyAsyncContext.keys = () => ([]);
 webpackEmptyAsyncContext.resolve = webpackEmptyAsyncContext;
 webpackEmptyAsyncContext.id = 3524;
 module.exports = webpackEmptyAsyncContext;
+
+/***/ }),
+
+/***/ 278:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+module.exports = __nccwpck_require__.p + "4e8ef5f3f2e737783615.js";
 
 /***/ }),
 
@@ -42604,6 +42551,9 @@ module.exports = parseParams
 /******/ 	return module.exports;
 /******/ }
 /******/ 
+/******/ // expose the modules object (__webpack_modules__)
+/******/ __nccwpck_require__.m = __webpack_modules__;
+/******/ 
 /************************************************************************/
 /******/ /* webpack/runtime/async module */
 /******/ (() => {
@@ -42703,9 +42653,40 @@ module.exports = parseParams
 /******/ 	__nccwpck_require__.o = (obj, prop) => (Object.prototype.hasOwnProperty.call(obj, prop))
 /******/ })();
 /******/ 
+/******/ /* webpack/runtime/publicPath */
+/******/ (() => {
+/******/ 	var scriptUrl;
+/******/ 	if (typeof import.meta.url === "string") scriptUrl = import.meta.url
+/******/ 	// When supporting browsers where an automatic publicPath is not supported you must specify an output.publicPath manually via configuration
+/******/ 	// or pass an empty string ("") and set the __webpack_public_path__ variable from your code to use your own logic.
+/******/ 	if (!scriptUrl) throw new Error("Automatic publicPath is not supported in this browser");
+/******/ 	scriptUrl = scriptUrl.replace(/#.*$/, "").replace(/\?.*$/, "").replace(/\/[^\/]+$/, "/");
+/******/ 	__nccwpck_require__.p = scriptUrl;
+/******/ })();
+/******/ 
 /******/ /* webpack/runtime/compat */
 /******/ 
 /******/ if (typeof __nccwpck_require__ !== 'undefined') __nccwpck_require__.ab = new URL('.', import.meta.url).pathname.slice(import.meta.url.match(/^file:\/\/\/\w:/) ? 1 : 0, -1) + "/";
+/******/ 
+/******/ /* webpack/runtime/import chunk loading */
+/******/ (() => {
+/******/ 	__nccwpck_require__.b = new URL("./", import.meta.url);
+/******/ 	
+/******/ 	// object to store loaded and loading chunks
+/******/ 	// undefined = chunk not loaded, null = chunk preloaded/prefetched
+/******/ 	// [resolve, reject, Promise] = chunk loading, 0 = chunk loaded
+/******/ 	var installedChunks = {
+/******/ 		179: 0
+/******/ 	};
+/******/ 	
+/******/ 	// no install chunk
+/******/ 	
+/******/ 	// no chunk on demand loading
+/******/ 	
+/******/ 	// no external install chunk
+/******/ 	
+/******/ 	// no on chunks loaded
+/******/ })();
 /******/ 
 /************************************************************************/
 /******/ 

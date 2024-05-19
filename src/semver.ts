@@ -5,7 +5,7 @@ import semver, { SemVer, ReleaseType } from 'semver'
 import assert from 'node:assert/strict'
 import { Logger, MandatoryInputs } from './interfaces.js'
 
-const TagVersionRegExps = {
+const tagVersionRegExps = {
   prefix: /^(([a-zA-Z0-9][a-zA-Z0-9_-]*[a-zA-Z_-])|([a-zA-Z]))?$/,
   core: /^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$/,
   prerelease:
@@ -13,11 +13,11 @@ const TagVersionRegExps = {
   build: /^(\+([0-9a-zA-Z-]+(\.[0-9a-zA-Z-]+)*))?$/
 }
 
-async function parseGitHistorySemver (ref: string, prefix: string, prereleaseMode: boolean): Promise<{ tags: string[], commits: GitCommit[] }> {
-  const BashTagVersionRegExps = {
-    core: TagVersionRegExps.core.source.replace(/[$^]/g, ''),
-    prerelease: TagVersionRegExps.prerelease.source.replace(/[$^]/g, ''),
-    build: TagVersionRegExps.build.source.replace(/[$^]/g, '')
+async function parseGitHistorySemver (ref: string, prefix: string, prereleaseMode: boolean, scope: string): Promise<{ tags: string[], commits: GitCommit[] }> {
+  const bashTagVersionRegExps = {
+    core: tagVersionRegExps.core.source.replace(/[$^]/g, ''),
+    prerelease: tagVersionRegExps.prerelease.source.replace(/[$^]/g, ''),
+    build: tagVersionRegExps.build.source.replace(/[$^]/g, '')
   }
 
   // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_expressions#escaping
@@ -26,22 +26,18 @@ async function parseGitHistorySemver (ref: string, prefix: string, prereleaseMod
   }
 
   const sanitizedPrefix = escapeRegExp(prefix)
-  const { core, prerelease, build } = BashTagVersionRegExps
+  const { core, prerelease, build } = bashTagVersionRegExps
 
   const tags = await getTags(ref, `${sanitizedPrefix}${core}${prereleaseMode ? prerelease : ''}${build}`)
   if (tags.length === 0) {
     throw Error('No tags found in the git history.')
   }
-  const commits = await getCommits(tags[0], ref)
-  if (commits.length === 0) {
-    throw Error('No commits found in the git history.')
-  }
+  const commits = await getCommits(tags[0], ref, `[a-zA-Z]+\\(${escapeRegExp(scope)}\\):`)
   return { tags, commits }
 }
 
 function parseGitTagsAsSemver (gitTags: string[], logger: Logger, prefix: string): SemVer[] {
   return gitTags.reduce<SemVer[]>((versions, gitTag) => {
-    // todo remove prefix
     const version = semver.parse(gitTag.replace(prefix, ''), {})
     if (version != null) versions.push(version)
     else {
@@ -59,13 +55,13 @@ function checkInputsWithRegexp (regex: RegExp, value: string): void {
 
 function checkInputs (inputs: SemVerInputs): void {
   [{
-    regex: TagVersionRegExps.prefix,
+    regex: tagVersionRegExps.prefix,
     value: inputs.prefix
   }, {
-    regex: TagVersionRegExps.build,
+    regex: tagVersionRegExps.build,
     value: inputs.build
   }, {
-    regex: TagVersionRegExps.prerelease,
+    regex: tagVersionRegExps.prerelease,
     value: inputs.prerelease
   }].forEach(obj => {
     checkInputsWithRegexp(obj.regex, obj.value.toString())
@@ -77,6 +73,7 @@ export interface SemVerInputs {
   readonly prefix: string
   readonly prerelease: string
   readonly build: string
+  readonly scope: string
 }
 
 export interface SemVerOutputs {
@@ -84,10 +81,10 @@ export interface SemVerOutputs {
   previousTag: string
 }
 
-function selectLastVersion (versions: SemVer[], commit: GitCommit, logger: Logger): SemVer {
+function selectLastVersion (versions: SemVer[], logger: Logger): SemVer {
   if (versions.length > 1) {
     logger.warning(
-      `Multiple versions found on commit ${commit.hash}: '${versions.join('; ')}'. The highest precedence one will be selected.`
+      `Multiple versions found on same commit: '${versions.join('; ')}'. The highest precedence one will be selected.`
     )
   }
   return semver.rsort(versions)[0]
@@ -148,12 +145,17 @@ export async function nextSemanticVersion (inputs: SemVerInputs): Promise<SemVer
 
   const ref = inputs.mandatory.ref
   const logger = inputs.mandatory.logger
-  const gitParsedResult = await parseGitHistorySemver(ref, inputs.prefix, inputs.prerelease !== '')
+  const gitParsedResult = await parseGitHistorySemver(ref, inputs.prefix, inputs.prerelease !== '', inputs.scope)
   const versions = parseGitTagsAsSemver(gitParsedResult.tags, logger, inputs.prefix)
 
-  const selectedVersion = selectLastVersion(versions, gitParsedResult.commits[0], logger)
+  const selectedVersion = selectLastVersion(versions, logger)
 
   output.previousTag = `${inputs.prefix}${selectedVersion.version}`
+
+  if (gitParsedResult.commits.length === 0) {
+    logger.warning('No commits found in the git history.')
+    return output
+  }
 
   const releaseType = await getReleaseType(gitParsedResult.commits, selectedVersion, inputs.prerelease !== '', logger)
   if (releaseType === null) {

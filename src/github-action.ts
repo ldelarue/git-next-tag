@@ -21,7 +21,8 @@ try {
     mandatory,
     prefix: getInput('tag-prefix'),
     build: (getInput('semver-build') !== '') ? `+${getInput('semver-build')}` : '',
-    prerelease: (getInput('semver-prerelease') !== '') ? `-${getInput('semver-prerelease')}` : ''
+    prerelease: (getInput('semver-prerelease') !== '') ? `-${getInput('semver-prerelease')}` : '',
+    scope: getInput('scope')
   }
 
   const outputs = await nextSemanticVersion(inputs)
