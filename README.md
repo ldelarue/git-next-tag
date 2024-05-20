@@ -23,7 +23,7 @@ Maybe it does exist. If in doubt, give this project a try. 😉
 
 ## Prerequisites
 
-- The current branch using the Action must have a linear git history
+- The current branch using the Action **MUST** have a linear git history.
 - Before the first start, it is necessary to add a version tag in the git-history consistent with the action configuration.
 
 Example of command to create a git tag on the first commit of a project:
