@@ -35285,6 +35285,7 @@ try {
     console.log(outputs);
     (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.setOutput)('previous-tag', outputs.previousTag);
     (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.setOutput)('tag', outputs.tag);
+    (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.setOutput)('semver', outputs.semver);
 }
 catch (error) {
     console.log(error);
@@ -40702,7 +40703,8 @@ async function getReleaseType(commits, selectedVersion, isPrerelease, logger) {
 async function nextSemanticVersion(inputs) {
     const output = {
         tag: '',
-        previousTag: ''
+        previousTag: '',
+        semver: ''
     };
     checkInputs(inputs);
     const ref = inputs.mandatory.ref;
@@ -40725,6 +40727,7 @@ async function nextSemanticVersion(inputs) {
         return output;
     }
     output.tag = `${inputs.prefix}${incrementedVersion.toString()}${inputs.build}`;
+    output.semver = incrementedVersion.toString();
     return output;
 }
 

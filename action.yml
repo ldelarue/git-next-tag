@@ -43,6 +43,10 @@ outputs:
     description: |
       Tag found in git history and used as basehead for version calculation. Useful for release management.
       - Never equals to ''.
+  semver:
+    description: |
+      Semantic Versioning part of resulted tag. <https://semver.org/#spec-item-2>
+      - Equals to '' if there is no version change.
 
 runs:
   using: 'node20'
