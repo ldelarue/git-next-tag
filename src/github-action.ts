@@ -29,6 +29,7 @@ try {
   console.log(outputs)
   setOutput('previous-tag', outputs.previousTag)
   setOutput('tag', outputs.tag)
+  setOutput('semver', outputs.semver)
 } catch (error) {
   console.log(error)
   setFailed(error.message)

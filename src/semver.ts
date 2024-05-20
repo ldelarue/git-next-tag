@@ -79,6 +79,7 @@ export interface SemVerInputs {
 export interface SemVerOutputs {
   tag: string
   previousTag: string
+  semver: string
 }
 
 function selectLastVersion (versions: SemVer[], logger: Logger): SemVer {
@@ -138,7 +139,8 @@ async function getReleaseType (commits: GitCommit[], selectedVersion: SemVer, is
 export async function nextSemanticVersion (inputs: SemVerInputs): Promise<SemVerOutputs> {
   const output: SemVerOutputs = {
     tag: '',
-    previousTag: ''
+    previousTag: '',
+    semver: ''
   }
 
   checkInputs(inputs)
@@ -167,6 +169,7 @@ export async function nextSemanticVersion (inputs: SemVerInputs): Promise<SemVer
     return output
   }
   output.tag = `${inputs.prefix}${incrementedVersion.toString()}${inputs.build}`
+  output.semver = incrementedVersion.toString()
 
   return output
 }
