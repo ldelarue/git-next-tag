@@ -113,11 +113,16 @@ function getPrereleaseType (version: SemVer, releaseType: ReleaseType): ReleaseT
 }
 
 async function getReleaseType (commits: GitCommit[], selectedVersion: SemVer, isPrerelease: boolean, logger: Logger): Promise<ReleaseType | null> {
+  if (commits.length === 0) {
+    logger.info('No commits found in the git history.')
+    return null
+  }
+
   let releaseType: ReleaseType = await analyzeCommits(
     { parserOpts: (await createPreset()).parserOpts },
     {
       commits,
-      logger: { log: logger.info.bind(console) }
+      logger: console
     }
   )
 
@@ -153,11 +158,6 @@ export async function nextSemanticVersion (inputs: SemVerInputs): Promise<SemVer
   const selectedVersion = selectLastVersion(versions, logger)
 
   output.previousTag = `${inputs.prefix}${selectedVersion.version}`
-
-  if (gitParsedResult.commits.length === 0) {
-    logger.warning('No commits found in the git history.')
-    return output
-  }
 
   const releaseType = await getReleaseType(gitParsedResult.commits, selectedVersion, inputs.prerelease !== '', logger)
   if (releaseType === null) {
