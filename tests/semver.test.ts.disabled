@@ -1,0 +1,148 @@
+import { expect, test } from 'vitest'
+import nextSemanticVersion from '../src/semver.js'
+
+function createGitHubContextFromCommitMessage (commitMessage, ref) {
+  return {
+    rest: {
+      repos: {
+        compareCommitsWithBasehead: jest.fn().mockReturnValue({
+          data: {
+            commits: [
+              {
+                sha: ref,
+                commit: {
+                  message: commitMessage
+                }
+              }
+            ]
+          }
+        })
+      }
+    }
+  }
+}
+
+function createCoreContextFromInputs (inputs) {
+  return {
+    setOutput: jest.fn().mockImplementation((...args) => {
+      return jest.fn().mockImplementation()
+    }),
+    warning: jest.fn().mockImplementation((...args) => {
+      console.log(args)
+    }),
+    info: jest.fn().mockImplementation((...args) => {
+      console.log(args)
+    }),
+    getInput: jest.fn().mockImplementation((key) => {
+      return inputs[key]
+    })
+  }
+}
+
+const ref = '123456abcdef'
+const context = {
+  repo: {
+    owner: 'john',
+    repo: 'workplace'
+  }
+}
+
+describe('Versions tests', () => {
+  describe.each([
+    ['fix', 'v0.1.0', 'v0.1.1-rc.0'],
+    ['feat', 'v0.1.0', 'v0.2.0-rc.0'],
+    ['feat!', 'v0.1.0', 'v0.2.0-rc.0'],
+    ['fix', 'v0.1.0-rc.0', 'v0.1.0-rc.1'],
+    ['feat', 'v0.1.0-rc.0', 'v0.1.0-rc.1'],
+    ['feat!', 'v0.1.0-rc.0', 'v0.1.0-rc.1'],
+    ['fix', 'v0.1.1', 'v0.1.2-rc.0'],
+    ['feat', 'v0.1.1', 'v0.2.0-rc.0'],
+    ['feat!', 'v0.1.1', 'v0.2.0-rc.0'],
+    ['fix', 'v0.1.1-rc.0', 'v0.1.1-rc.1'],
+    ['feat', 'v0.1.1-rc.0', 'v0.2.0-rc.0'],
+    ['feat!', 'v0.1.1-rc.0', 'v0.2.0-rc.0'],
+    ['fix', 'v1.0.0', 'v1.0.1-rc.0'],
+    ['feat', 'v1.0.0', 'v1.1.0-rc.0'],
+    ['feat!', 'v1.0.0', 'v2.0.0-rc.0'],
+    ['fix', 'v1.0.0-rc.0', 'v1.0.0-rc.1'],
+    ['feat', 'v1.0.0-rc.0', 'v1.0.0-rc.1'],
+    ['feat!', 'v1.0.0-rc.0', 'v1.0.0-rc.1'],
+    ['fix', 'v1.0.1', 'v1.0.2-rc.0'],
+    ['feat', 'v1.0.1', 'v1.1.0-rc.0'],
+    ['feat!', 'v1.0.1', 'v2.0.0-rc.0'],
+    ['fix', 'v1.0.1-rc.0', 'v1.0.1-rc.1'],
+    ['feat', 'v1.0.1-rc.0', 'v1.1.0-rc.0'],
+    ['feat!', 'v1.0.1-rc.0', 'v2.0.0-rc.0'],
+    ['fix', 'v1.1.0', 'v1.1.1-rc.0'],
+    ['feat', 'v1.1.0', 'v1.2.0-rc.0'],
+    ['feat!', 'v1.1.0', 'v2.0.0-rc.0'],
+    ['fix', 'v1.1.0-rc.0', 'v1.1.0-rc.1'],
+    ['feat', 'v1.1.0-rc.0', 'v1.1.0-rc.1'],
+    ['feat!', 'v1.1.0-rc.0', 'v2.0.0-rc.0'],
+    ['fix', 'v1.1.1', 'v1.1.2-rc.0'],
+    ['feat', 'v1.1.1', 'v1.2.0-rc.0'],
+    ['feat!', 'v1.1.1', 'v2.0.0-rc.0'],
+    ['fix', 'v1.1.1-rc.0', 'v1.1.1-rc.1'],
+    ['feat', 'v1.1.1-rc.0', 'v1.2.0-rc.0'],
+    ['feat!', 'v1.1.1-rc.0', 'v2.0.0-rc.0']
+  ])('prerelease mode', (commitType, oldVersion, expectedVersion) => {
+    test(`${commitType} + ${oldVersion} == ${expectedVersion}`, async () => {
+      const github = createGitHubContextFromCommitMessage(`${commitType}: my message`, ref)
+      const core = createCoreContextFromInputs({
+        'tag-prefix': 'v',
+        'semver-prerelease': 'rc',
+        'semver-build': ''
+      })
+      const exec = {
+        getExecOutput: jest.fn().mockImplementation(() => {
+          return {
+            exitCode: 0,
+            stdout: `${oldVersion.slice(1)}`
+          }
+        })
+      }
+      await computeNextReleaseVersion({ github, context, ref, core, exec })
+      expect(core.setOutput).toHaveBeenCalledWith('tag', expectedVersion)
+    })
+  })
+
+  describe.each([
+    ['fix', 'v0.1.0', 'v0.1.1'],
+    ['feat', 'v0.1.0', 'v0.2.0'],
+    ['feat!', 'v0.1.0', 'v0.2.0'],
+    ['fix', 'v0.1.1', 'v0.1.2'],
+    ['feat', 'v0.1.1', 'v0.2.0'],
+    ['feat!', 'v0.1.1', 'v0.2.0'],
+    ['fix', 'v1.0.0', 'v1.0.1'],
+    ['feat', 'v1.0.0', 'v1.1.0'],
+    ['feat!', 'v1.0.0', 'v2.0.0'],
+    ['fix', 'v1.0.1', 'v1.0.2'],
+    ['feat', 'v1.0.1', 'v1.1.0'],
+    ['feat!', 'v1.0.1', 'v2.0.0'],
+    ['fix', 'v1.1.0', 'v1.1.1'],
+    ['feat', 'v1.1.0', 'v1.2.0'],
+    ['feat!', 'v1.1.0', 'v2.0.0'],
+    ['fix', 'v1.1.1', 'v1.1.2'],
+    ['feat', 'v1.1.1', 'v1.2.0'],
+    ['feat!', 'v1.1.1', 'v2.0.0']
+  ])('release mode', (commitType, oldVersion, expectedVersion) => {
+    test(`${commitType} + ${oldVersion} == ${expectedVersion}`, async () => {
+      const github = createGitHubContextFromCommitMessage(`${commitType}: my message`, ref)
+      const core = createCoreContextFromInputs({
+        'tag-prefix': 'v',
+        'semver-prerelease': '',
+        'semver-build': ''
+      })
+      const exec = {
+        getExecOutput: jest.fn().mockImplementation(() => {
+          return {
+            exitCode: 0,
+            stdout: `${oldVersion.slice(1)}`
+          }
+        })
+      }
+      await computeNextReleaseVersion({ github, context, ref, core, exec })
+      expect(core.setOutput).toHaveBeenCalledWith('tag', expectedVersion)
+    })
+  })
+})
