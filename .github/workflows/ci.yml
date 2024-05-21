@@ -22,18 +22,20 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-  
+
       - shell: bash
         run: |
           npm install
-          sha256=$(make dist-checksum)
-          echo "::notice:: 'dist' sha256sum: $sha256"
-          printf "" > .gitignore 
-          git config --global user.email "action@github.com"
-          git config --global user.name "GitHub Action"
-          git add dist
-          git commit -m "$(printf "build(dist): $(echo $sha256 | awk '{print substr($1, 1, 7)}') \n\nsha256sum: $sha256")"
-          git push
+          if [ "$(git diff --ignore-space-at-eol --text dist/ | wc -l)" -gt "0" ]; then
+            sha256=$(make dist-checksum)
+            echo "::notice:: 'dist' sha256sum: $sha256"
+            printf "" > .gitignore 
+            git config --global user.email "action@github.com"
+            git config --global user.name "GitHub Action"
+            git add dist
+            git commit -m "$(printf "build(dist): $(echo $sha256 | awk '{print substr($1, 1, 7)}') \n\nsha256sum: $sha256")"
+            git push
+          fi
 
   compute-tag:
     runs-on: ['ubuntu-latest'] 
@@ -52,6 +54,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: ${{ github.ref_name }}
           
       - uses: actions/checkout@v4
         with:
@@ -78,6 +81,8 @@ jobs:
   
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
 
       - uses: ./.github/actions/draft-release/
         id: release
