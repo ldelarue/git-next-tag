@@ -40684,9 +40684,13 @@ function getPrereleaseType(version, releaseType) {
     return `pre${releaseType}`;
 }
 async function getReleaseType(commits, selectedVersion, isPrerelease, logger) {
+    if (commits.length === 0) {
+        logger.info('No commits found in the git history.');
+        return null;
+    }
     let releaseType = await analyzeCommits({ parserOpts: (await conventional_changelog_conventionalcommits_default()()).parserOpts }, {
         commits,
-        logger: { log: logger.info.bind(console) }
+        logger: console
     });
     if (releaseType === null) {
         logger.info(`Analysis starting from commit '${commits[0]?.hash ?? ''}' to '${commits.at(-1)?.hash ?? ''}' results in no new version.`);
@@ -40713,10 +40717,6 @@ async function nextSemanticVersion(inputs) {
     const versions = parseGitTagsAsSemver(gitParsedResult.tags, logger, inputs.prefix);
     const selectedVersion = selectLastVersion(versions, logger);
     output.previousTag = `${inputs.prefix}${selectedVersion.version}`;
-    if (gitParsedResult.commits.length === 0) {
-        logger.warning('No commits found in the git history.');
-        return output;
-    }
     const releaseType = await getReleaseType(gitParsedResult.commits, selectedVersion, inputs.prerelease !== '', logger);
     if (releaseType === null) {
         return output;
