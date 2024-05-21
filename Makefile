@@ -1,3 +1,4 @@
+SHELL := /bin/bash
 .DEFAULT_GOAL := help
 
 .PHONY: lint
@@ -8,10 +9,9 @@ lint: ## Run super-linter locally
 lint-debug: ## Run super-linter locally with DEBUG mode
 	@docker run -e RUN_LOCAL=true --env-file ".github/super-linter.env" -e LOG_LEVEL=DEBUG -v $(CURDIR):/tmp/lint ghcr.io/super-linter/super-linter:slim-v6.5.0
 
-
-.PHONY: pre-commit
-pre-commit: ## Add pre-commit hooks.
-	@ln -fs $(CURDIR)/hooks/transpiler.sh $(CURDIR)/.git/hooks/pre-commit
+.PHONY: dist-checksum
+dist-checksum: ## Generate checksums for dist directory
+	@sort <(find $(CURDIR)/dist -type f -exec sha256sum {} + 2> /dev/null || echo '') | awk '{print $$1}' | sha256sum | awk '{print $$1}' 
 
 # https://marmelab.com/blog/2016/02/29/auto-documented-makefile.html
 .PHONY: help

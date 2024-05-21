@@ -9,9 +9,37 @@ permissions:
   contents: write
 
 jobs:
+  commit-dist:
+    runs-on: ['ubuntu-latest'] 
+    timeout-minutes: 5
+
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+  
+      - shell: bash
+        run: |
+          npm install
+          sha256=$(make dist-checksum)
+          echo "::notice:: 'dist' sha256sum: $sha256"
+          printf "" > .gitignore 
+          git config --global user.email "action@github.com"
+          git config --global user.name "GitHub Action"
+          git add dist
+          git commit -m "$(printf "build(dist): $(echo $sha256 | awk '{print substr($1, 1, 7)}') \n\nsha256sum: $sha256")"
+          git push
+
   compute-tag:
     runs-on: ['ubuntu-latest'] 
     timeout-minutes: 5
+    needs: 
+      - commit-dist
 
     outputs:
       tag: ${{ steps.run_action.outputs.tag }}
@@ -39,6 +67,7 @@ jobs:
     runs-on: ['ubuntu-latest'] 
     timeout-minutes: 5
     needs: 
+      - commit-dist
       - compute-tag
 
     outputs:

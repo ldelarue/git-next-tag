@@ -8,6 +8,7 @@
     "test": "tests"
   },
   "scripts": {
+    "postinstall": "npm run build",
     "test": "vitest",
     "build": "npm run build:action && npm run build:package",
     "build:action": "ncc build './src/github-action.ts' -o ./dist",
