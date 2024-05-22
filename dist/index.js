@@ -40628,7 +40628,7 @@ async function parseGitHistorySemver(ref, prefix, prereleaseMode, scope) {
     if (tags.length === 0) {
         throw Error('No tags found in the git history.');
     }
-    const commits = await getCommits(tags[0], ref, `${scope === '' ? '' : `[a-zA-Z]+\\(${escapeRegExp(scope)}\\):`}`);
+    const commits = await getCommits(tags[0], ref, `${scope === '' ? '' : `[a-zA-Z]+\\(${escapeRegExp(scope)}\\)!?:`}`);
     return { tags, commits };
 }
 function parseGitTagsAsSemver(gitTags, logger, prefix) {
