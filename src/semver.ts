@@ -1,4 +1,4 @@
-import { getTags, getCommits, GitCommit } from './git-parser.js'
+import { getTags, getCommits, GitCommit, isGitHistoryLinear } from './git-parser.js'
 import { analyzeCommits } from '@semantic-release/commit-analyzer'
 import createPreset from 'conventional-changelog-conventionalcommits'
 import semver, { SemVer, ReleaseType } from 'semver'
@@ -152,6 +152,12 @@ export async function nextSemanticVersion (inputs: SemVerInputs): Promise<SemVer
 
   const ref = inputs.mandatory.ref
   const logger = inputs.mandatory.logger
+
+  if (!await isGitHistoryLinear(ref)) {
+    logger.warning('The git history is not linear. The versioning may not be accurate.')
+    throw Error('The git history is not linear. Aborting.')
+  }
+
   const gitParsedResult = await parseGitHistorySemver(ref, inputs.prefix, inputs.prerelease !== '', inputs.scope)
   const versions = parseGitTagsAsSemver(gitParsedResult.tags, logger, inputs.prefix)
 
